@@ -1,0 +1,15 @@
+Direct Kinematics 1
+
+Xj2 = xm2 - R*cos(theta)
+Yj2 = ym2 + R*sin(theta)
+
+Direct Kinematics 2
+
+yA = yj1 + 0.5*(yj2-yj1)
+
+Direct Kinematic 3
+
+R^2 = h^2 + (0.5*(j2-j1))^2
+Squrt (R^2 - (0.5(j2-j1))^2) = h 
+
+Direct Kinematics 4
