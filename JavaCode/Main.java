@@ -1,314 +1,248 @@
 
-/* Code for Assignment ?? 
- * Name:
- * Usercode:
- * ID:
+/**
+ * Class represents SCARA robotic arm.
+ * 
+ * @Arthur Roberts
+ * @0.0
  */
 
-import ecs100.*;
+import ecs100.UI;
+import java.awt.Color;
 import java.util.*;
-import java.io.*;
-import java.awt.*;
+import java.lang.*;
 
-/** <description of class Main>
- */
-public class Main{
+public class Arm
+{
 
-    private Arm arm;
-    private Drawing drawing;
-    private ToolPath tool_path;
-    // state of the GUI
-    private int state; // 0 - nothing
-    // 1 - inverse point kinematics - point
-    // 2 - enter path. Each click adds point  
-    // 3 - enter path pause. Click does not add the point to the path
+    // fixed arm parameters
+    private int xm1;  // coordinates of the motor(measured in pixels of the picture)
+    private int ym1;
+    private int xm2;
+    private int ym2;
+    private double r;  // length of the upper/fore arm
+    // parameters of servo motors - linear function pwm(angle)
+    // each of two motors has unique function which should be measured
+    // linear function cam be described by two points
+    // motor 1, point1 
+    private double pwm1_val_1; 
+    private double theta1_val_1;
+    // motor 1, point 2
+    private double pwm1_val_2; 
+    private double theta1_val_2;
 
-    /**      */
-    public Main(){
-        UI.initialise();
-        UI.addButton("xy to angles", this::inverse);
-        UI.addButton("Enter path XY", this::enter_path_xy);
-        UI.addButton("Save path XY", this::save_xy);
-        UI.addButton("Load path XY", this::load_xy);
-        UI.addButton("Save path Ang", this::save_ang);
-        UI.addButton("Load path", this::load_ang);
-        UI.addButton("save the pwm", this::savepwmfile);
-        UI.addButton("square",this::drawSquare);
-        UI.addButton("drawSkynet", this::drawSkynet);
-        UI.addButton("S", this::drawSNet);
-        UI.addButton("K", this::drawKNet);
-        UI.addButton("Y", this::drawYNet);
-        UI.addButton("N", this::drawNNet);
-        UI.addButton("E", this::drawENet);
-        UI.addButton("T", this::drawTNet);
-        // UI.addButton("Quit", UI::quit);
-        UI.setMouseMotionListener(this::doMouse);
-        UI.setKeyListener(this::doKeys);
+    // motor 2, point 1
+    private double pwm2_val_1; 
+    private double theta2_val_1;
+    // motor 2, point 2
+    private double pwm2_val_2; 
+    private double theta2_val_2;
 
-        //ServerSocket serverSocket = new ServerSocket(22); 
-        this.arm = new Arm();
-        this.drawing = new Drawing();
-        this.run();
-        this.tool_path= new ToolPath();
-        arm.draw();
+    // current state of the arm
+    private double theta1; // angle of the upper arm
+    private double theta2;
+
+    private double xj1;     // positions of the joints
+    private double yj1; 
+    private double xj2;
+    private double yj2; 
+    private double xt;     // position of the tool
+    private double yt;
+    private boolean valid_state; // is state of the arm physically possible?
+
+    /**
+     * Constructor for objects of class Arm
+     */
+    public Arm()
+    {
+        xm1 = 287; // set motor coordinates
+        ym1 = 374;
+        xm2 = 377;
+        ym2 = 374;
+        r = 154.0;
+        theta1 = -90.0*Math.PI/180.0; // initial angles of the upper arms
+        theta2 = -90.0*Math.PI/180.0;
+        valid_state = false;
     }
 
-
-    public void drawSquare(){
-        doMouse("clicked",283,138);//top left
-        doMouse("clicked",313,138);//top right
-        doMouse("clicked",313,178);//bottom right
-        doMouse("clicked",283,178);//bottom left
-        doMouse("clicked",283,138);//top left
+    public boolean getValidState(){
+        return valid_state;
     }
 
-    public void drawSkynet(){
-        //S
-        doMouse("clicked",184,154);
-        doMouse("clicked",164,154);
-        doMouse("clicked",164,174);
-        doMouse("clicked",184,174);
-        doMouse("clicked",184,194);
-        doMouse("clicked",164,194);
-        //k
-        doMouse("clicked",204,154);
-        doMouse("clicked",204,194);
-        doMouse("clicked",204,174);
-        doMouse("clicked",224,194);
-        doMouse("clicked",204,174);
-        doMouse("clicked",224,154);
-        //y
-        doMouse("clicked",264,154);
-        doMouse("clicked",244,194);
-        doMouse("clicked",254,174);
-        doMouse("clicked",244,154);
-        //N
-        doMouse("clicked",280,194);
-        doMouse("clicked",280,154);
-        doMouse("clicked",305, 194);
-        doMouse("clicked", 305, 154);
-        //E
-        doMouse("clicked", 320, 154);
-        doMouse("clicked", 320, 194);
-        doMouse("clicked", 335, 194);
-        doMouse("clicked", 320, 170);
-        doMouse("clicked", 335, 170);
-        doMouse("clicked", 320, 154);
-        doMouse("clicked", 335, 154);
-        //T
-        doMouse("clicked", 350,154);
-        doMouse("clicked", 380,154);
-        doMouse("clicked", 365, 154);
-        doMouse("clicked", 365, 194);
-    }
+    // draws arm on the canvas
+    public void draw()
+    {
+        // draw arm
+        int height = UI.getCanvasHeight();
+        int width = UI.getCanvasWidth();
+        // calculate joint positions
+        xj1 = xm1 + r*Math.cos(theta1);
+        yj1 = ym1 + r*Math.sin(theta1);
+        xj2 = xm2 + r*Math.cos(theta2);
+        yj2 = ym2 + r*Math.sin(theta2);
 
-    public void drawSNet(){
-        drawS();
-    }
+        //draw motors and write angles
+        int mr = 20;
+        UI.setLineWidth(5);
+        UI.setColor(Color.BLUE);
+        UI.drawOval(xm1-mr/2,ym1-mr/2,mr,mr);
+        UI.drawOval(xm2-mr/2,ym2-mr/2,mr,mr);
+        // write parameters of first motor
+        String out_str=String.format("t1=%3.1f",theta1*180/Math.PI);
+        UI.drawString(out_str, xm1-2*mr,ym1-mr/2+2*mr);
+        out_str=String.format("xm1=%d",xm1);
+        UI.drawString(out_str, xm1-2*mr,ym1-mr/2+3*mr);
+        out_str=String.format("ym1=%d",ym1);
+        UI.drawString(out_str, xm1-2*mr,ym1-mr/2+4*mr);
+        // ditto for second motor                
+        out_str = String.format("t2=%3.1f",theta2*180/Math.PI);
+        UI.drawString(out_str, xm2+2*mr,ym2-mr/2+2*mr);
+        out_str=String.format("xm2=%d",xm2);
+        UI.drawString(out_str, xm2+2*mr,ym2-mr/2+3*mr);
+        out_str=String.format("ym2=%d",ym2);
+        UI.drawString(out_str, xm2+2*mr,ym2-mr/2+4*mr);
+        // draw Field Of View
+        UI.setColor(Color.GRAY);
+        UI.drawRect(0,0,640,480);
 
-    public void drawKNet(){
-        drawK();
-    }
-
-    public void drawYNet(){
-        drawY();
-    }
-
-    public void drawNNet(){
-        drawN();
-    }
-
-    public void drawENet(){
-        drawE();
-    }
-
-    public void drawTNet(){
-        drawT();
-    }
-
-    public void drawS(){
-        doMouse("clicked",184,154);
-        doMouse("clicked",164,154);
-        doMouse("clicked",164,174);
-        doMouse("clicked",184,174);
-        doMouse("clicked",184,194);
-        doMouse("clicked",164,194);
-    }
-
-    public void drawK(){
-        doMouse("clicked",204,154);
-        doMouse("clicked",204,194);
-        doMouse("clicked",204,174);
-        doMouse("clicked",224,194);
-        doMouse("clicked",204,174);
-        doMouse("clicked",224,154);
-    }
-
-    public void drawY(){
-        doMouse("clicked",264,154);
-        doMouse("clicked",244,194);
-        doMouse("clicked",254,174);
-        doMouse("clicked",244,154);
-    }
-
-    public void drawN(){
-        doMouse("clicked",280,194);
-        doMouse("clicked",280,154);
-        doMouse("clicked",305, 194);
-        doMouse("clicked", 305, 154);
-    }
-
-    public void drawE(){
-
-        doMouse("clicked",335,154);
-        doMouse("clicked", 320,154 );
-        doMouse("clicked", 320,194);
-        doMouse("clicked",334,194 );
-        doMouse("clicked", 320,194 );
-        doMouse("clicked", 320,170);
-        doMouse("clicked", 335,170 );
-
-        //         doMouse("clicked", 320, 154);
-        //         doMouse("clicked", 320, 194);
-        //         doMouse("clicked", 335, 194);
-        //         doMouse("clicked", 320, 170);
-        //         doMouse("clicked", 335, 170);
-        //         doMouse("clicked", 320, 154);
-        //         doMouse("clicked", 335, 154);
-    }
-
-    public void drawT(){
-        doMouse("clicked", 350,154);
-        doMouse("clicked", 380,154);
-        doMouse("clicked", 365, 154);
-        doMouse("clicked", 365, 194);
-    }
-
-    public void savepwmfile(){
-        tool_path=new ToolPath();
-        tool_path.convert_drawing_to_angles(drawing,arm,"");
-        tool_path.convert_angles_to_pwm(arm);
-        tool_path.save_pwm_file();
-    }
-
-    public void doKeys(String action){
-        UI.printf("Key :%s \n", action);
-        if (action.equals("b")) {
-            // break - stop entering the lines
-            state = 3;
-            //
-
+        // it can b euncommented later when
+        // kinematic equations are derived
+        if ( valid_state) {
+            // draw upper arms
+            UI.setColor(Color.GREEN);
+            UI.drawLine(xm1,ym1,xj1,yj1);
+            UI.drawLine(xm2,ym2,xj2,yj2);
+            //draw forearms
+            UI.drawLine(xj1,yj1,xt,yt);
+            UI.drawLine(xj2,yj2,xt,yt);
+            // draw tool
+            double rt = 20;
+            UI.drawOval(xt-rt/2,yt-rt/2,rt,rt);
         }
 
     }
 
-    public void doMouse(String action, double x, double y) {
-        //UI.printf("Mouse Click:%s, state:%d  x:%3.1f  y:%3.1f\n",
-        //   action,state,x,y);
-        UI.clearGraphics();
-        String out_str=String.format("%3.1f %3.1f",x,y);
-        UI.drawString(out_str, x+10,y+10);
-        // 
-        if ((state == 1)&&(action.equals("clicked"))){
-            // draw as 
+    // calculate tool position from motor angles 
+    // updates variable in the class
+    public void directKinematic(){
+        // distance between joints
 
-            arm.inverseKinematic(x,y);
-            arm.draw();
+        // midpoint between joints
+        double  xa =xj1+0.5*(xj2-xj1);
+        double  ya =yj1+0.5*(yj2-yj1);
+        // distance between joints
+        double d = Math.sqrt(Math.pow((xj2-xj1),2.0)+Math.pow((yj2-yj1),2.0));
+        if (d<2*r){
+            valid_state = true;
+            // half distance between tool positions
+            double  h = Math.sqrt(Math.pow( r, 2) - Math.pow( d/2, 2));
+            double alpha = Math.atan(Math.abs((yj1-yj2)/(xj2-xj1))*-1);
+            double xt = xa + h * Math.cos((Math.PI/2) - alpha);
+            double yt = ya + h * Math.sin((Math.PI/2) - alpha);
+            double xt2 = xa - h*Math.cos(Math.PI/2 - alpha);
+            double yt2 = ya - h*Math.sin(Math.PI/2 - alpha);
+
+        } else {
+            valid_state = false;
+        }
+
+    }
+
+    // updetes variables of the class
+
+    public void inverseKinematic(double xt_new,double yt_new){
+        valid_state = true;
+        xt = xt_new;
+        yt = yt_new;
+        valid_state = true;
+        double dx1 = xt - xm1; 
+        double dy1 = yt - ym1;
+        double dx2 = xt - xm2; 
+        double dy2 = yt - ym2;
+        // distance between pem and motor
+        double d1 = Math.sqrt(Math.pow(dx1,2)+Math.pow(dy1,2));
+        double d2 = Math.sqrt(Math.pow(dx2,2)+Math.pow(dy2,2));
+        double d3 = ym1+(ym2-ym1)/2 - Math.sqrt(r*r - Math.pow(r-xm1+(xm2-xm1)/2,2));
+        if (d1>2*r){
+            UI.println("Arm 1 - can not reach");
+            valid_state = false;
+            return;
+        }
+        if (d2>2*r){
+            UI.println("Arm 2 - can not reach");
+            valid_state = false;
+            return;
+        }
+        if(yt>d3){
+            UI.println("Pen - can not reach");
+            valid_state = false;
+            return;
+        }
+        double h1 = Math.sqrt(r*r - d1*d1/4);
+        double h2 = Math.sqrt(r*r - (d2*d2)/4);
+        ////
+        double alpha1=Math.atan2(yt-ym1,xm1-xt);  
+        double alpha2=Math.atan2(yt-ym2,xm2-xt);
+        ////
+        double xa1=xm1+0.5*(xt-xm1);   
+        double ya1=ym1+0.5*(yt-ym1);
+        double  xa2=xm2+0.5*(xt-xm2);   
+        double ya2=ym2+0.5*(yt-ym2);
+
+        // elbows positions
+        xj1 = xa1+h1*(Math.cos((Math.PI)/2 - alpha1));
+        yj1 = ya1+h1*(Math.sin((Math.PI)/2 - alpha1)) ;   
+        xj2 = xa2-h2*(Math.cos((Math.PI)/2 - alpha2));
+        yj2 = ya2-h2*(Math.sin((Math.PI)/2 - alpha2));
+
+        theta1=Math.atan2((yj1-ym1), (xj1-xm1));
+        if ((theta1>0)||(theta1<-Math.PI)){
+            valid_state = false;
+            UI.println("Ange 1 -invalid");
+            return;
+        }
+        // motor angles for both 1st elbow positions
+        theta2 =Math.atan2((yj2-ym2),(xj2-xm2)) ;
+        if ((theta2>0)||(theta2<-Math.PI)){
+            valid_state = false;
+            UI.println("Ange 2 -invalid");
             return;
         }
 
-        if ( ((state == 2)||(state == 3))&&action.equals("moved") ){
-            // draw arm and path
-            arm.inverseKinematic(x,y);
-            arm.draw();
-
-            // draw segment from last entered point to current mouse position
-            if ((state == 2)&&(drawing.get_path_size()>0)){
-                PointXY lp = new PointXY();
-                lp = drawing.get_path_last_point();
-                //if (lp.get_pen()){
-                UI.setColor(Color.GRAY);
-                UI.drawLine(lp.get_x(),lp.get_y(),x,y);
-                // }
-            }
-            drawing.draw();
-        }
-
-        // add point
-        if (   (state == 2) &&(action.equals("clicked"))){
-            // add point(pen down) and draw
-            UI.printf("Adding point x=%f y=%f\n",x,y);
-            //drawing.add_point_to_path(x,y,true); // add point with pen down
-
-            arm.inverseKinematic(x,y);
-            if(arm.getValidState()){
-                drawing.add_point_to_path(x,y,true); // add point with pen down
-                arm.draw();
-                drawing.draw();
-                drawing.print_path();
-            }
-        }
-
-        if ((state == 3) &&(action.equals("clicked"))){
-            // add point and draw
-            //UI.printf("Adding point x=%f y=%f\n",x,y);
-            // drawing.add_point_to_path(x,y,false); // add point wit pen up
-
-            arm.inverseKinematic(x,y);
-            if(arm.getValidState()){
-                drawing.add_point_to_path(x,y,false); // add point wit pen up     
-                arm.draw();
-                drawing.draw();
-                drawing.print_path();
-                state = 2;
-            }
-        }
-
+        //UI.printf("xt:%3.1f, yt:%3.1f\n",xt,yt);
+        //UI.printf("theta1:%3.1f, theta2:%3.1f\n",theta1*180/Math.PI,theta2*180/Math.PI);
+        return;
     }
 
-    public void save_xy(){
-        state = 0;
-        String fname = UIFileChooser.save();
-        drawing.save_path(fname);
+    // returns angle of motor 1
+    public double get_theta1(){
+        return theta1;
+    }
+    // returns angle of motor 2
+    public double get_theta2(){
+        return theta2;
+    }
+    // sets angle of the motors
+    public void set_angles(double t1, double t2){
+        theta1 = t1;
+        theta2 = t2;
     }
 
-    public void enter_path_xy(){
-        state = 2;
+    // returns motor control signal
+    // for motor to be in position(angle) theta1
+    // linear intepolation
+    public int get_pwm1(){
+        double pwm=(-10*theta1+190);
+        return (int)pwm;
+    }
+    // ditto for motor 2
+    public int get_pwm2(){
+        double pwm=(-10.0*theta2+950);
+        return (int)pwm;
     }
 
-    public void inverse(){
-        state = 1;
-        arm.draw();
+    public int get_pwm3(){
+        int pwm=1999;
+        return pwm;
     }
-
-    public void load_xy(){
-        state = 0;
-        String fname = UIFileChooser.open();
-        drawing.load_path(fname);
-        drawing.draw();
-
-        arm.draw();
-    }
-
-    //save angles into the file
-    public void save_ang(){
-        String fname = UIFileChooser.open();
-        tool_path.convert_drawing_to_angles(drawing,arm,fname);
-    }
-
-    public void load_ang(){
-        
-    }
-
-    public void run() {
-        while(true) {
-            arm.draw();
-            UI.sleep(20);
-        }
-    }
-
-    public static void main(String[] args){
-        Main obj = new Main();
-    }    
 
 }
