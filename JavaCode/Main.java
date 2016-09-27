@@ -34,7 +34,6 @@ public class Main{
         UI.addButton("Load path", this::load_ang);
         UI.addButton("save the pwm", this::savepwmfile);
         UI.addButton("square",this::drawSquare);
-        UI.addButton("doCircle", this::doCircle);
         UI.addButton("drawSkynet", this::drawSkynet);
         UI.addButton("S", this::drawSNet);
         UI.addButton("K", this::drawKNet);
@@ -54,30 +53,6 @@ public class Main{
         arm.draw();
     }
 
-    public void doCircle(){
-
-        double centreX = 340;
-        double centreY =140;
-        double a = 38.0;
-        double b = 35.0;
-        //double r = 37.5;
-        for(double x = centreX - a; x < centreX + a; x+=5){
-            double y = Math.sqrt(b*b*(1-(Math.pow(x - centreX,2)/a/a))) + centreY;
-            doMouse("clicked",x,y);
-
-        }
-        for(double x = centreX - a; x < centreX + a; x+=5){
-            double y = -Math.sqrt(b*b*(1-(Math.pow(x - centreX,2)/a/a))) + centreY;
-            doMouse("clicked",x,y);
-
-        }
-        for(double x = centreX - a; x < centreX + a; x+=5){
-            double y = Math.sqrt(b*b*(1-(Math.pow(x - centreX,2)/a/a))) + centreY;
-            doMouse("clicked",x,y);
-
-        }
-
-    }
 
     public void drawSquare(){
         doMouse("clicked",283,138);//top left
