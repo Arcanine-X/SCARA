@@ -1,0 +1,22 @@
+public void drawSkynet(){
+        //S
+        doMouse("clicked",184,154);
+        doMouse("clicked",164,154);
+        doMouse("clicked",164,174);
+        doMouse("clicked",184,174);
+        doMouse("clicked",184,194);
+        doMouse("clicked",164,194);
+        //k
+        doMouse("clicked",204,154);
+        doMouse("clicked",204,194);
+        doMouse("clicked",204,174);
+        doMouse("clicked",224,194);
+        doMouse("clicked",204,174);
+        doMouse("clicked",224,154);
+        //y
+        doMouse("clicked",264,154);
+        doMouse("clicked",244,194);
+        doMouse("clicked",254,174);
+        doMouse("clicked",244,154);
+        //N
+    }
