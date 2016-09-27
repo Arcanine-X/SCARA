@@ -27,7 +27,7 @@ import java.io.InputStreamReader;
 
 public class ToolPath
 {
-    int n_steps; //straight line segmentt will be broken
+    int n_steps=40; //straight line segmentt will be broken
     // into that many sections
 
     // storage for angles and 
@@ -45,7 +45,7 @@ public class ToolPath
     public ToolPath()
     {
         // initialise instance variables
-        n_steps = 50;
+        n_steps = 20;
         theta1_vector = new ArrayList<Double>();
         theta2_vector = new ArrayList<Double>();
         pen_vector = new ArrayList<Integer>();
@@ -77,6 +77,7 @@ public class ToolPath
                 }
             }
         }
+        save_angles(fname);
     }
 
     public void save_angles(String fname){
@@ -92,8 +93,8 @@ public class ToolPath
             OutputStreamWriter osw = new OutputStreamWriter(is);    
             Writer w = new BufferedWriter(osw);
             String str_out;
-            for (int i = 1; i < theta1_vector.size() ; i++){
-                str_out = String.format("%3.1f,%3.1f,%d\n",
+            for (int i = 0; i < theta1_vector.size() ; i++){
+                str_out = String.format("%3.1f,%3.1f,%d\n", 
                     theta1_vector.get(i),theta2_vector.get(i),pen_vector.get(i));
                 w.write(str_out);
             }
@@ -107,35 +108,61 @@ public class ToolPath
     // takes sequence of angles and converts it 
     // into sequence of motor signals
     public void convert_angles_to_pwm(Arm arm){
-        // for each angle
+        //for each angle
         //         for (int i=0 ; i < theta1_vector.size();i++){
         //             arm.set_angles(theta1_vector.get(i),theta2_vector.get(i));
         //             pwm1_vector.add(arm.get_pwm1());
         //             pwm2_vector.add(arm.get_pwm2());
         //         }
-        
+
         for (int i=0 ; i < theta1_vector.size();i++){
             arm.set_angles(theta1_vector.get(i),theta2_vector.get(i));
             int pwm1=arm.get_pwm1();
             int pwm2=arm.get_pwm2();
-            
             if(pwm1>1000&&pwm1<2000){
                 pwm1_vector.add(arm.get_pwm1());
             }
             if(pwm2>1000&&pwm2<2000){
                 pwm2_vector.add(arm.get_pwm2());
             }
-            if (pen_vector.get(i) == 1) pwm3_vector.add(2000);
-            else pwm3_vector.add(1000);
-            
-        }
-    }
+            if (pen_vector.get(i) == 1){
+                pwm3_vector.add(2000);
+            }
+            else{
+                pwm3_vector.add(1000);
+            }
 
+        }
+
+    }
     // save file with motor control values
     public void save_pwm_file(){
+        String filename=UIFileChooser.save();
+        try{
+            PrintStream ps=new PrintStream(new File(filename));
+            for(int i=0;i<pwm1_vector.size();i++){
+                int pwm1=pwm1_vector.get(i);
+                int pwm2=pwm2_vector.get(i);
+                int pwm3=pwm3_vector.get(i);
+                String pw1=pwm1 + "";
+                String pw2=pwm2 + "";
+                String pw3=pwm3 + "";
+                ps.println(pw1+","+pw2+","+pw3);
+            }
+            ps.close();
+        }
+        catch(IOException e){
+            UI.printf("File Failure % \n", e);
+        }
 
     }
 
+    public ArrayList<Double> getTheta1_vector(){
+        return theta1_vector;
+    }
 
+    public ArrayList<Double> getTheta2_vector(){
+        return theta2_vector;
+    }
 
 }
