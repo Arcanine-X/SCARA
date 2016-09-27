@@ -109,12 +109,6 @@ public class ToolPath
     // into sequence of motor signals
     public void convert_angles_to_pwm(Arm arm){
         //for each angle
-        //         for (int i=0 ; i < theta1_vector.size();i++){
-        //             arm.set_angles(theta1_vector.get(i),theta2_vector.get(i));
-        //             pwm1_vector.add(arm.get_pwm1());
-        //             pwm2_vector.add(arm.get_pwm2());
-        //         }
-
         for (int i=0 ; i < theta1_vector.size();i++){
             arm.set_angles(theta1_vector.get(i),theta2_vector.get(i));
             int pwm1=arm.get_pwm1();
@@ -156,13 +150,4 @@ public class ToolPath
         }
 
     }
-
-    public ArrayList<Double> getTheta1_vector(){
-        return theta1_vector;
-    }
-
-    public ArrayList<Double> getTheta2_vector(){
-        return theta2_vector;
-    }
-
 }
