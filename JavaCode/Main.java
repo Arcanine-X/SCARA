@@ -45,7 +45,6 @@ public class Main{
         UI.addButton("E", this::drawENet);
         UI.addButton("T", this::drawTNet);
         UI.addButton("Sent to Pi", this::send_to_pi);
-        UI.addButton("Draw Image", this::drawImage);
         // UI.addButton("Quit", UI::quit);
         UI.setMouseMotionListener(this::doMouse);
         UI.setKeyListener(this::doKeys);
