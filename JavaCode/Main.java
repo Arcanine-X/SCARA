@@ -9,6 +9,8 @@ import ecs100.*;
 import java.util.*;
 import java.io.*;
 import java.awt.*;
+import java.awt.image.*;
+import javax.imageio.*;
 
 /** <description of class Main>
  */
@@ -34,6 +36,7 @@ public class Main{
         UI.addButton("Load path", this::load_ang);
         UI.addButton("save the pwm", this::savepwmfile);
         UI.addButton("square",this::drawSquare);
+        UI.addButton("doCircle", this::doCircle);
         UI.addButton("drawSkynet", this::drawSkynet);
         UI.addButton("S", this::drawSNet);
         UI.addButton("K", this::drawKNet);
@@ -41,6 +44,8 @@ public class Main{
         UI.addButton("N", this::drawNNet);
         UI.addButton("E", this::drawENet);
         UI.addButton("T", this::drawTNet);
+        UI.addButton("Sent to Pi", this::send_to_pi);
+        UI.addButton("Draw Image", this::drawImage);
         // UI.addButton("Quit", UI::quit);
         UI.setMouseMotionListener(this::doMouse);
         UI.setKeyListener(this::doKeys);
@@ -52,6 +57,52 @@ public class Main{
         this.tool_path= new ToolPath();
         arm.draw();
     }
+    
+    public void send_to_pi(){
+        try {
+            ProcessBuilder builder = new ProcessBuilder("script", "test", "-c","scp square2.txt pi@10.140.60.173:/home/pi/Arm");
+            Process p = builder.start();
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(p.getOutputStream()));
+            Scanner s = new Scanner(p.getInputStream());
+            while (p.isAlive()) {
+                String s2 = s.next();
+                UI.println(s2);
+                if(s2.contains("password")){
+                    writer.write("pi\n");
+                    writer.flush();
+
+                }
+            }
+        }
+        catch(IOException ex){
+            ex.printStackTrace();
+        }
+    }
+
+    public void doCircle(){
+
+        double CX = 500;
+        double CY = 215;
+        double opx = 500+50;
+        double opy = 215;
+        double ang = 0;
+        double r= 25;
+        double px = 0;
+        double py = 0;
+
+        for(int i =0; i<30; i++){
+
+            px = CX+Math.cos(Math.toRadians(ang))*r;
+            px = px* 0.60;
+            py = CY+Math.sin(Math.toRadians(ang))*r;
+            doMouse("clicked", px ,py);
+            ang = ang +20;
+            UI.drawLine(opx,opy,px,py);
+            opx = px;
+            opy = py;
+        }
+
+    }
 
     public void drawSquare(){
         doMouse("clicked",283,138);//top left
@@ -59,6 +110,7 @@ public class Main{
         doMouse("clicked",313,178);//bottom right
         doMouse("clicked",283,178);//bottom left
         doMouse("clicked",283,138);//top left
+        doMouse("clicked",283,108);
     }
 
     public void drawSkynet(){
@@ -100,6 +152,7 @@ public class Main{
         doMouse("clicked", 365, 154);
         doMouse("clicked", 365, 194);
     }
+
 
     public void drawSNet(){
         drawS();
@@ -158,7 +211,6 @@ public class Main{
     }
 
     public void drawE(){
-
         doMouse("clicked",335,154);
         doMouse("clicked", 320,154 );
         doMouse("clicked", 320,194);
@@ -179,7 +231,7 @@ public class Main{
         tool_path=new ToolPath();
         if(tool_path == null)UI.println("cant");
         tool_path.convert_drawing_to_angles(drawing,arm,"");
-        tool_path.convert_angles_to_pwm(arm);
+        //tool_path.convert_angles_to_pwm(arm);
         tool_path.save_pwm_file();
     }
 
