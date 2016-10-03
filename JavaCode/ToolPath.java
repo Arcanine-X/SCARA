@@ -45,7 +45,7 @@ public class ToolPath
     public ToolPath()
     {
         // initialise instance variables
-        n_steps = 20;
+        n_steps = 40;
         theta1_vector = new ArrayList<Double>();
         theta2_vector = new ArrayList<Double>();
         pen_vector = new ArrayList<Integer>();
@@ -70,6 +70,21 @@ public class ToolPath
                 arm.inverseKinematic(x, y);
                 theta1_vector.add(arm.get_theta1()*180/Math.PI);
                 theta2_vector.add(arm.get_theta2()*180/Math.PI);
+                int pwm1=arm.get_pwm1();
+                int pwm2=arm.get_pwm2();
+                if(pwm1>1000&&pwm1<2000){
+                    pwm1_vector.add(arm.get_pwm1());
+                }
+                if(pwm2>1000&&pwm2<2000){
+                    pwm2_vector.add(arm.get_pwm2());
+                }
+                if (p1.get_pen()){
+                    pwm3_vector.add(2000);
+                }
+                else{
+                    pwm3_vector.add(1000);
+                }
+
                 if (p0.get_pen()){ 
                     pen_vector.add(1);
                 } else {
@@ -134,13 +149,16 @@ public class ToolPath
         String filename=UIFileChooser.save();
         try{
             PrintStream ps=new PrintStream(new File(filename));
+            UI.println("Stream OK. size="+pwm1_vector.size());
             for(int i=0;i<pwm1_vector.size();i++){
+                UI.println("i="+i);
                 int pwm1=pwm1_vector.get(i);
                 int pwm2=pwm2_vector.get(i);
                 int pwm3=pwm3_vector.get(i);
                 String pw1=pwm1 + "";
                 String pw2=pwm2 + "";
                 String pw3=pwm3 + "";
+                UI.println(pw1+","+pw2+","+pw3);
                 ps.println(pw1+","+pw2+","+pw3);
             }
             ps.close();
